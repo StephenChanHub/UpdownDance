@@ -1,59 +1,65 @@
 <template>
-    <view class="main-postcard-shell">
-
+    <view class="main-postcard-shell" @click="handleOpen">
         <view class="media-layer">
-            <view class="media-placeholder">
+            <image v-if="post.image" class="media-image" :src="post.image" mode="aspectFill" />
+            <view v-else class="media-placeholder">
                 <text class="media-icon">🖼️</text>
-                <text class="media-label">V E D I O / I M A G E</text>
+                <text class="media-label">I M A G E</text>
             </view>
         </view>
 
-        <view class="user-layer-overlay">
-            <view class="user-glass-card">
-                <view class="avatar-box"></view>
-                <text class="username-text">Username</text>
-            </view>
+        <view class="content-overlay">
+            <text class="username-text">@{{ post.username || '用户名' }}</text>
+            <text class="content-text">{{ previewContent }}</text>
         </view>
-
     </view>
 </template>
 
+<script setup>
+const props = defineProps({
+    post: {
+        type: Object,
+        required: true,
+    },
+});
+
+const emit = defineEmits(['open']);
+const post = props.post;
+
+const previewContent = ((post.content || '').trim() || '').slice(0, 10);
+
+const handleOpen = () => {
+    emit('open', post.id);
+};
+</script>
+
 <style scoped>
-/* --- 1. 主容器层 (Base Layer) --- */
 .main-postcard-shell {
     position: relative;
-    /* 为内部绝对定位提供基准 */
     width: 100%;
-    aspect-ratio: 1 / 1;
-    /* 极简主卡片通常使用 1:1 或 4:5 */
-    background: #FFFFFF;
+    aspect-ratio: 0.74;
+    background: #ffffff;
     border-radius: 24px;
-    /* iOS 风格大圆角 */
     overflow: hidden;
-    /* 确保内部层级不超出圆角 */
-
-    /* 悬浮效果：与 PostCard 一致 */
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
     transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
 }
 
-/* 点击反馈效果 */
 .main-postcard-shell:active {
     transform: scale(0.97);
 }
 
-/* --- 2. 媒体层 (Middle Layer) --- */
 .media-layer {
     position: absolute;
-    top: 0;
-    left: 0;
+    inset: 0;
+    background: #f2f2f7;
+}
+
+.media-image {
     width: 100%;
     height: 100%;
-    z-index: 1;
-    /* 处于底层 */
-    background-color: #F2F2F7;
-    /* iOS 系统灰色占位 */
+    display: block;
 }
 
 .media-placeholder {
@@ -63,61 +69,42 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: #C7C7CC;
+    color: #c7c7cc;
 }
 
 .media-icon {
-    font-size: 40px;
+    font-size: 38px;
     margin-bottom: 8px;
 }
 
 .media-label {
     font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 1px;
+    font-weight: 700;
+    letter-spacing: 0.24em;
 }
 
-.media-icon,
-.media-label,
-.username-text {
-    display: block;
-}
-
-/* --- 3. 用户层 (Top Layer) --- */
-.user-layer-overlay {
+.content-overlay {
     position: absolute;
-    inset: 0;
-    /* 撑满容器，但内部内容通过 flex 或定位控制 */
-    z-index: 2;
-    /* 处于顶层 */
-    padding: 16px;
+    inset: auto 0 0 0;
+    padding: 14px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(18, 18, 22, 0.55) 100%);
     display: flex;
-    align-items: flex-end;
-    /* 用户信息靠底部显示 */
-    pointer-events: none;
-    /* 确保点击能穿透到主容器触发缩放 */
-}
-
-/* 用户信息的极简悬浮玻璃卡片 */
-.user-glass-card {
-    pointer-events: auto;
-    /* 恢复用户卡片的可点击性 */
-    display: flex;
-    align-items: center;
-    padding: 2px;
-}
-
-.avatar-box {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: #E5E5EA;
-    margin-right: 8px;
+    flex-direction: column;
+    gap: 6px;
 }
 
 .username-text {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.content-text {
     font-size: 13px;
-    font-weight: 600;
-    color: #1C1C1E;
+    line-height: 1.35;
+    color: rgba(255, 255, 255, 0.92);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 </style>

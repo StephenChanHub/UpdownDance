@@ -1,12 +1,7 @@
 <template>
   <view class="island-wrapper center">
     <view class="glass-island search-bar" :class="{ 'is-focused': isSearchFocused }">
-      <input
-        type="text"
-        placeholder="search"
-        @focus="isSearchFocused = true"
-        @blur="isSearchFocused = false"
-      />
+      <input type="text" placeholder="search" @focus="isSearchFocused = true" @blur="isSearchFocused = false" />
       <image class="search-icon" :src="searchIcon" mode="aspectFit" />
     </view>
   </view>

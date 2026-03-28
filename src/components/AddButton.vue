@@ -1,12 +1,13 @@
 <template>
   <view class="add-btn-floating-wrapper">
-    <view class="glass-island add-btn">
+    <view class="glass-island add-btn" @click="emit('click')">
       <text class="add-icon">+</text>
     </view>
   </view>
 </template>
 
 <script setup>
+const emit = defineEmits(['click']);
 </script>
 
 <style scoped>
@@ -19,7 +20,6 @@
   align-items: center;
   justify-content: center;
   pointer-events: none;
-
 }
 
 .glass-island {
@@ -27,14 +27,15 @@
   backdrop-filter: blur(30px) saturate(150%);
   -webkit-backdrop-filter: blur(30px) saturate(150%);
   border-radius: 35px;
-  border: 0px solid rgba(255, 255, 255, 0.1);
+  border: 0 solid rgba(255, 255, 255, 0.1);
   box-shadow:
     0 20px 36px rgba(0, 0, 0, 0.14),
     0 6px 14px rgba(0, 0, 0, 0.1),
     0 1px 0 rgba(255, 255, 255, 0.5) inset;
   display: flex;
   align-items: center;
-  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1),
+  transition:
+    transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1),
     box-shadow 0.18s cubic-bezier(0.2, 0.8, 0.2, 1),
     background 0.25s ease;
   pointer-events: auto;
@@ -52,6 +53,7 @@
   font-size: 24px;
   font-weight: 300;
   color: #007AFF;
+  transition: transform 0.14s ease;
 }
 
 .add-btn:hover {
@@ -72,10 +74,6 @@
 
 .add-btn:active .add-icon {
   transform: scale(0.94);
-}
-
-.add-icon {
-  transition: transform 0.14s ease;
 }
 
 @media (max-width: 420px) {

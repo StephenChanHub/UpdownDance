@@ -6,14 +6,14 @@
       </view>
     </view>
 
-    <view class="bottom-floating-nav-layer">
+    <view v-if="showBottomNav" class="bottom-floating-nav-layer">
       <view class="glass-island nav-container">
         <view
           v-for="item in NAV_ITEMS"
           :key="item.id"
           class="nav-item"
-          :class="{ active: activeNav === item.id }"
-          @click="activeNav = item.id"
+          :class="{ active: currentNavView === item.id }"
+          @click="navigateTab(item.id)"
         >
           <view class="nav-icon-wrapper">
             <image class="nav-icon" :src="item.icon" mode="aspectFit" />
@@ -25,15 +25,18 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import Explore from '../../views/Explore.vue';
 import Short from '../../views/Short.vue';
 import Store from '../../views/Store.vue';
 import Message from '../../views/Message.vue';
 import Me from '../../views/Me.vue';
+import Post from '../../views/Post.vue';
+import PostDetail from '../../views/PostDetail.vue';
 import { NAV_ITEMS } from '../../constants/navigation';
+import { useAppViewStore } from '../../stores/appViewStore';
 
-const activeNav = ref('Explore');
+const { activeView, currentNavView, navigateTab } = useAppViewStore();
 
 const viewMap = {
   Explore,
@@ -41,9 +44,12 @@ const viewMap = {
   Store,
   Message,
   Me,
+  Post,
+  PostDetail,
 };
 
-const currentView = computed(() => viewMap[activeNav.value] || Explore);
+const currentView = computed(() => viewMap[activeView.value] || Explore);
+const showBottomNav = computed(() => ['Explore', 'Short', 'Store', 'Message', 'Me'].includes(activeView.value));
 </script>
 
 <style scoped>
