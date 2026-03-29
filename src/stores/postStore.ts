@@ -1,4 +1,5 @@
 import { computed, ref } from 'vue';
+import { useAuthStore } from './authStore';
 
 const posts = ref([]);
 const selectedPostId = ref(null);
@@ -6,13 +7,14 @@ const searchQuery = ref('');
 
 const createPost = ({ image, title, content }) => {
   const id = Date.now().toString();
+  const { user } = useAuthStore();
 
   posts.value.unshift({
     id,
     image,
     title: title?.trim() || 'Untitled',
     content: content?.trim() || '',
-    username: 'Stephen',
+    username: user.nickname || user.account || 'Anonymous',
     createdAt: new Date().toISOString(),
   });
 
