@@ -8,13 +8,8 @@
 
     <view v-if="showBottomNav" class="bottom-floating-nav-layer">
       <view class="glass-island nav-container">
-        <view
-          v-for="item in NAV_ITEMS"
-          :key="item.id"
-          class="nav-item"
-          :class="{ active: currentNavView === item.id }"
-          @click="navigateTab(item.id)"
-        >
+        <view v-for="item in NAV_ITEMS" :key="item.id" class="nav-item" :class="{ active: currentNavView === item.id }"
+          @click="navigateTab(item.id)">
           <view class="nav-icon-wrapper">
             <image class="nav-icon" :src="item.icon" mode="aspectFit" />
           </view>
@@ -66,9 +61,10 @@ const showBottomNav = computed(() => ['Explore', 'Short', 'Store', 'Message', 'M
 
 .bottom-floating-nav-layer {
   position: fixed;
-  bottom: calc(34px + env(safe-area-inset-bottom));
+  bottom: calc(1% + env(safe-area-inset-bottom));
   left: 0;
   width: 100%;
+  height: 60px;
   display: flex;
   justify-content: center;
   z-index: 1000;
@@ -76,9 +72,9 @@ const showBottomNav = computed(() => ['Explore', 'Short', 'Store', 'Message', 'M
 }
 
 .glass-island {
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(30px) saturate(150%);
-  -webkit-backdrop-filter: blur(30px) saturate(150%);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px) saturate(150%);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
   border-radius: 35px;
   border: 1px solid rgba(255, 255, 255, 0.5);
   box-shadow:
@@ -142,8 +138,7 @@ const showBottomNav = computed(() => ['Explore', 'Short', 'Store', 'Message', 'M
 
 .nav-item.active .nav-icon {
   transform: scale(1.5);
-  filter: brightness(0) saturate(100%) invert(45%) sepia(98%) saturate(2370%) hue-rotate(198deg) brightness(102%) contrast(101%)
-    drop-shadow(0 6px 12px rgba(0, 122, 255, 0.22));
+  filter: brightness(0) saturate(100%) invert(45%) sepia(98%) saturate(2370%) hue-rotate(198deg) brightness(102%) contrast(101%) drop-shadow(0 6px 12px rgba(0, 122, 255, 0.22));
 }
 
 .nav-item.active .nav-icon-wrapper::before {

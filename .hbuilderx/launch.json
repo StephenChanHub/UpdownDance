@@ -1,0 +1,16 @@
+{
+    "version" : "1.0",
+    "configurations" : [
+        {
+            "customPlaygroundType" : "device",
+            "playground" : "custom",
+            "type" : "uni-app:app-ios"
+        },
+        {
+            "customPlaygroundType" : "device",
+            "ipaPath" : "iOS 26.2 (23C53) SDK + iOS 26.3.1 (23D8133) Simulator (Installed)",
+            "playground" : "standard",
+            "type" : "uni-app:app-ios_simulator"
+        }
+    ]
+}

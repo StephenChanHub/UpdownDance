@@ -1,7 +1,8 @@
 <template>
   <view class="island-wrapper center">
     <view class="glass-island search-bar" :class="{ 'is-focused': isSearchFocused }">
-      <input type="text" placeholder="search" @focus="isSearchFocused = true" @blur="isSearchFocused = false" />
+      <input :value="modelValue" type="text" placeholder="search" @focus="isSearchFocused = true"
+        @blur="isSearchFocused = false" @input="handleInput" />
       <image class="search-icon" :src="searchIcon" mode="aspectFit" />
     </view>
   </view>
@@ -11,7 +12,19 @@
 import { ref } from 'vue';
 import searchIcon from '../../public/img/search.png';
 
+defineProps({
+  modelValue: {
+    type: String,
+    default: '',
+  },
+});
+
+const emit = defineEmits(['update:modelValue']);
 const isSearchFocused = ref(false);
+
+const handleInput = (event) => {
+  emit('update:modelValue', event.detail.value);
+};
 </script>
 
 <style scoped>
@@ -30,8 +43,8 @@ const isSearchFocused = ref(false);
 
 .glass-island {
   background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(30px) saturate(150%);
-  -webkit-backdrop-filter: blur(30px) saturate(150%);
+  backdrop-filter: blur(5px) saturate(150%);
+  -webkit-backdrop-filter: blur(5px) saturate(150%);
   border-radius: 35px;
   border: 1px solid rgba(255, 255, 255, 0.5);
   box-shadow: 0 15px 45px rgba(0, 0, 0, 0.1);

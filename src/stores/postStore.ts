@@ -2,6 +2,7 @@ import { computed, ref } from 'vue';
 
 const posts = ref([]);
 const selectedPostId = ref(null);
+const searchQuery = ref('');
 
 const createPost = ({ image, title, content }) => {
   const id = Date.now().toString();
@@ -45,12 +46,49 @@ const clearSelectedPost = () => {
   selectedPostId.value = null;
 };
 
+const setSearchQuery = (value) => {
+  searchQuery.value = value?.trim?.() ?? '';
+};
+
 const selectedPost = computed(() => {
   return posts.value.find((post) => post.id === selectedPostId.value) || null;
 });
 
+const filteredPosts = computed(() => {
+  const query = searchQuery.value.trim().toLowerCase();
+
+  if (!query) return posts.value;
+
+  return posts.value
+    .map((post) => {
+      const username = (post.username || '').toLowerCase();
+      const title = (post.title || '').toLowerCase();
+      const content = (post.content || '').toLowerCase();
+
+      let priority = -1;
+
+      if (username.includes(query)) {
+        priority = 3;
+      } else if (title.includes(query)) {
+        priority = 2;
+      } else if (content.includes(query)) {
+        priority = 1;
+      }
+
+      return {
+        post,
+        priority,
+      };
+    })
+    .filter((item) => item.priority > 0)
+    .sort((a, b) => b.priority - a.priority)
+    .map((item) => item.post);
+});
+
 export const usePostStore = () => ({
   posts,
+  searchQuery,
+  filteredPosts,
   selectedPostId,
   selectedPost,
   createPost,
@@ -58,4 +96,5 @@ export const usePostStore = () => ({
   deletePost,
   selectPost,
   clearSelectedPost,
+  setSearchQuery,
 });

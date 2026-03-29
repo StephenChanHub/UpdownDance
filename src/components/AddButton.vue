@@ -13,9 +13,9 @@ const emit = defineEmits(['click']);
 <style scoped>
 .add-btn-floating-wrapper {
   position: fixed;
-  top: calc(70% + env(safe-area-inset-top));
+  /* top: calc(70% + env(safe-area-inset-top)); */
   right: 30px;
-  z-index: 1100;
+  /* z-index: 1100; */
   display: flex;
   align-items: center;
   justify-content: center;
