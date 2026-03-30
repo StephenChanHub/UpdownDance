@@ -5,8 +5,10 @@
             <!-- Profile header -->
             <view class="profile-header glass-card">
                 <view class="base-info">
-                    <view class="avatar">
-                        <text class="avatar-text">{{ avatarLabel }}</text>
+                    <view class="avatar" @click="openModal('edit')">
+                        <image v-if="isLoggedIn && user.avatar" class="avatar-img" :src="user.avatar"
+                            mode="aspectFill" />
+                        <text v-else class="avatar-text">{{ avatarLabel }}</text>
                     </view>
                     <view class="name-wrap">
                         <text class="nickname">{{ isLoggedIn ? user.nickname : 'Guest' }}</text>
@@ -99,45 +101,46 @@
                 <text class="modal-title">{{
                     modalMode === 'login' ? 'Sign In' : modalMode ===
                         'register' ? 'Create Account' : 'Edit Profile' }}</text>
-                <view class="modal-close" @click="closeModal"><text>✕</text></view>
+                <view class="modal-close" @click="closeModal"><text>X</text></view>
             </view>
 
             <!-- Avatar row -->
-            <view class="field-avatar-row">
+            <view class="field-avatar-row" @click="pickAvatar">
                 <view class="field-avatar-preview">
-                    <text class="field-avatar-text">{{ formAvatarLabel }}</text>
+                    <image v-if="form.avatar" class="field-avatar-img" :src="form.avatar" mode="aspectFill" />
+                    <text v-else class="field-avatar-text">{{ formAvatarLabel }}</text>
                 </view>
                 <view class="field-avatar-hint">
                     <text class="fah-title">Profile Photo</text>
-                    <text class="fah-sub">Tap to choose (coming soon)</text>
+                    <text class="fah-sub">Tap to upload and crop circle</text>
                 </view>
             </view>
 
             <!-- Name -->
             <view class="field-group">
                 <text class="field-label">Name</text>
-                <input class="field-input" v-model="form.nickname" placeholder="Display name"
+                <input class="field-input" v-model="form.nickname" placeholder="Display name" maxlength="9"
                     placeholder-style="color:#b0b0b8" />
             </view>
 
             <!-- Account ID (register / edit only) -->
             <view v-if="modalMode !== 'login'" class="field-group">
                 <text class="field-label">Account ID</text>
-                <input class="field-input" v-model="form.account" placeholder="e.g. updown_stephen"
+                <input class="field-input" v-model="form.account" placeholder="e.g. updown_stephen" maxlength="9"
                     placeholder-style="color:#b0b0b8" />
             </view>
 
             <!-- Password (login / register only) -->
             <view v-if="modalMode !== 'edit'" class="field-group">
                 <text class="field-label">Password</text>
-                <input class="field-input" v-model="form.password" password placeholder="Enter password"
+                <input class="field-input" v-model="form.password" password placeholder="Enter password" maxlength="9"
                     placeholder-style="color:#b0b0b8" />
             </view>
 
             <!-- Phone (register / edit) -->
             <view v-if="modalMode !== 'login'" class="field-group">
                 <text class="field-label">Phone Number</text>
-                <input class="field-input" v-model="form.phone" type="tel" placeholder="+1 234 567 8900"
+                <input class="field-input" v-model="form.phone" type="tel" placeholder="+1 234 567 8900" maxlength="20"
                     placeholder-style="color:#b0b0b8" />
             </view>
 
@@ -145,7 +148,7 @@
             <view v-if="modalMode !== 'login'" class="field-group">
                 <text class="field-label">Email</text>
                 <input class="field-input" v-model="form.email" type="email" placeholder="you@example.com"
-                    placeholder-style="color:#b0b0b8" />
+                    maxlength="64" placeholder-style="color:#b0b0b8" />
             </view>
 
             <!-- Actions -->
@@ -231,11 +234,48 @@ const form = reactive({
     password: '',
     phone: '',
     email: '',
+    avatar: '',
 });
+
+const CN_NAME_MAX = 9;
+const ACCOUNT_MAX = 9;
+const PASSWORD_MAX = 9;
+
+const normalizeName = (v) => (v || '').trim().slice(0, CN_NAME_MAX);
+const normalizeShort = (v, max) => (v || '').trim().slice(0, max);
+const phoneRegex = /^\+?[0-9\s\-()]{6,20}$/;
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 const formAvatarLabel = computed(() =>
     form.nickname ? form.nickname.slice(0, 2).toUpperCase() : '?'
 );
+
+const pickAvatar = () => {
+    const uniAny = uni as any;
+    uni.chooseImage({
+        count: 1,
+        sizeType: ['compressed'],
+        sourceType: ['album', 'camera'],
+        success: ({ tempFilePaths }) => {
+            const path = tempFilePaths?.[0];
+            if (!path) return;
+
+            // 尝试调用系统裁剪（支持时裁 1:1），不支持则直接使用原图
+            if (typeof uniAny.cropImage === 'function') {
+                uniAny.cropImage({
+                    src: path,
+                    cropScale: '1:1',
+                    success: ({ tempFilePath }) => {
+                        form.avatar = tempFilePath || path;
+                    },
+                    fail: () => { form.avatar = path; },
+                });
+            } else {
+                form.avatar = path;
+            }
+        },
+    });
+};
 
 const openModal = (mode) => {
     modalMode.value = mode;
@@ -245,10 +285,11 @@ const openModal = (mode) => {
             account: user.account,
             phone: user.phone,
             email: user.email,
+            avatar: user.avatar || '',
             password: '',
         });
     } else {
-        Object.assign(form, { nickname: '', account: '', password: '', phone: '', email: '' });
+        Object.assign(form, { nickname: '', account: '', password: '', phone: '', email: '', avatar: '' });
     }
     modalVisible.value = true;
 };
@@ -258,12 +299,43 @@ const closeModal = () => { modalVisible.value = false; };
 const handleSubmit = () => {
     const mode = modalMode.value;
 
+    form.nickname = normalizeName(form.nickname);
+    form.account = normalizeShort(form.account, ACCOUNT_MAX);
+    form.password = normalizeShort(form.password, PASSWORD_MAX);
+    form.phone = (form.phone || '').trim();
+    form.email = (form.email || '').trim();
+
+    if (form.nickname && form.nickname.length > CN_NAME_MAX) {
+        uni.showToast({ title: `Name 不能超过 ${CN_NAME_MAX} 个字符`, icon: 'none' });
+        return;
+    }
+
+    if (form.account && form.account.length > ACCOUNT_MAX) {
+        uni.showToast({ title: `Account 不能超过 ${ACCOUNT_MAX} 个字符`, icon: 'none' });
+        return;
+    }
+
+    if (form.password && form.password.length > PASSWORD_MAX) {
+        uni.showToast({ title: `Password 不能超过 ${PASSWORD_MAX} 个字符`, icon: 'none' });
+        return;
+    }
+
+    if (form.phone && !phoneRegex.test(form.phone)) {
+        uni.showToast({ title: 'Phone number 格式不正确', icon: 'none' });
+        return;
+    }
+
+    if (form.email && !emailRegex.test(form.email)) {
+        uni.showToast({ title: 'Email 格式不正确', icon: 'none' });
+        return;
+    }
+
     if (mode === 'login') {
         if (!form.nickname || !form.password) {
             uni.showToast({ title: 'Please fill in name & password', icon: 'none' });
             return;
         }
-        login({ nickname: form.nickname, account: form.account });
+        login({ nickname: form.nickname, account: form.account, avatar: form.avatar });
         closeModal();
         uni.showToast({ title: 'Welcome back!', icon: 'success' });
         return;
@@ -274,7 +346,13 @@ const handleSubmit = () => {
             uni.showToast({ title: 'Name, Account ID and Password are required', icon: 'none' });
             return;
         }
-        register({ nickname: form.nickname, account: form.account, phone: form.phone, email: form.email });
+        register({
+            nickname: form.nickname,
+            account: form.account,
+            phone: form.phone,
+            email: form.email,
+            avatar: form.avatar,
+        });
         closeModal();
         uni.showToast({ title: 'Account created!', icon: 'success' });
         return;
@@ -285,7 +363,13 @@ const handleSubmit = () => {
             uni.showToast({ title: 'Name cannot be empty', icon: 'none' });
             return;
         }
-        updateProfile({ nickname: form.nickname, account: form.account || user.account, phone: form.phone, email: form.email });
+        updateProfile({
+            nickname: form.nickname,
+            account: form.account || user.account,
+            phone: form.phone,
+            email: form.email,
+            avatar: form.avatar,
+        });
         closeModal();
         uni.showToast({ title: 'Profile updated', icon: 'success' });
     }
@@ -346,10 +430,17 @@ const confirmLogout = () => {
     width: 64px;
     height: 64px;
     border-radius: 50%;
+    overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
     background: linear-gradient(135deg, #007aff, #53b3ff);
+}
+
+.avatar-img {
+    width: 100%;
+    height: 100%;
+    display: block;
 }
 
 .avatar-text {
@@ -601,11 +692,18 @@ const confirmLogout = () => {
     width: 64px;
     height: 64px;
     border-radius: 50%;
+    overflow: hidden;
     background: linear-gradient(135deg, #007aff, #53b3ff);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+}
+
+.field-avatar-img {
+    width: 100%;
+    height: 100%;
+    display: block;
 }
 
 .field-avatar-text {

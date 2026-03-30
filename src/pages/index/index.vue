@@ -126,8 +126,8 @@ const showBottomNav = computed(() => ['Explore', 'Short', 'Store', 'Message', 'M
 }
 
 .nav-icon {
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   display: block;
   filter: grayscale(1) brightness(0.78) contrast(0.92);
   transition:

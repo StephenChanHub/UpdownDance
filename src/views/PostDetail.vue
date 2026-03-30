@@ -175,7 +175,7 @@ const BACK_BTN_TOP = 10;
 const BOTTOM_BAR_H = 70;
 
 const minY = computed(() => safeTop.value + BACK_BTN_TOP + BACK_BTN_H + 2);
-const maxY = computed(() => Math.max(minY.value + 20, heroHeight.value - 4));
+const maxY = computed(() => Math.max(minY.value + 20, heroHeight.value + 100));
 const cardY = ref(0);
 const isPinned = ref(false);
 

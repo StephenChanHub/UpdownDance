@@ -181,11 +181,11 @@ const filteredProducts = computed(() => {
 .category-pill {
     padding: 8px 14px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.62);
+    background: rgba(255, 255, 255, 0.5);
     color: #6d6d72;
     font-size: 12px;
     font-weight: 600;
-    border: 1px solid rgba(255, 255, 255, 0.56);
+    border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 .category-pill.active {

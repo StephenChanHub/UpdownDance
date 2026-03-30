@@ -17,6 +17,7 @@ const isLoggedIn = ref(_saved?.isLoggedIn ?? false);
 const user = reactive({
     nickname:  _saved?.nickname  ?? '',
     account:   _saved?.account   ?? '',
+    avatar:    _saved?.avatar    ?? '',
     bio:       _saved?.bio       ?? '',
     phone:     _saved?.phone     ?? '',
     email:     _saved?.email     ?? '',
@@ -47,9 +48,10 @@ const avatarLabel = computed(() => {
 });
 
 // ─── Actions ──────────────────────────────────────────────────────────
-const login = (payload: { nickname: string; account: string }) => {
+const login = (payload: { nickname: string; account: string; avatar?: string }) => {
     user.nickname  = payload.nickname;
     user.account   = payload.account || `updown_${payload.nickname.toLowerCase().replace(/\s+/g, '_')}`;
+    if (payload.avatar !== undefined) user.avatar = payload.avatar;
     user.following = 0;
     user.followers = 0;
     user.likes     = 0;
@@ -57,9 +59,10 @@ const login = (payload: { nickname: string; account: string }) => {
     persist();
 };
 
-const register = (payload: { nickname: string; account: string; phone?: string; email?: string }) => {
+const register = (payload: { nickname: string; account: string; phone?: string; email?: string; avatar?: string }) => {
     user.nickname  = payload.nickname;
     user.account   = payload.account;
+    user.avatar    = payload.avatar || user.avatar || '';
     user.phone     = payload.phone || '';
     user.email     = payload.email || '';
     user.following = 0;
@@ -77,7 +80,7 @@ const updateProfile = (payload: Partial<typeof user>) => {
 const logout = () => {
     isLoggedIn.value = false;
     Object.assign(user, {
-        nickname: '', account: '', bio: '', phone: '',
+        nickname: '', account: '', avatar: '', bio: '', phone: '',
         email: '', following: 0, followers: 0, likes: 0,
     });
     clearPersist();
