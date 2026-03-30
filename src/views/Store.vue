@@ -98,12 +98,12 @@ const filteredProducts = computed(() => {
 }
 
 .glass-island {
-    background: rgba(255, 255, 255, 0.68);
+    background: rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(24px) saturate(145%);
     -webkit-backdrop-filter: blur(24px) saturate(145%);
     border-radius: 24px;
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    border: 0.5px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 .store-banner {
@@ -155,11 +155,27 @@ const filteredProducts = computed(() => {
 }
 
 .category-row {
+    position: fixed;
+    top: calc(env(safe-area-inset-top) + 188px);
+    left: 14px;
+    right: 14px;
+    z-index: 120;
     display: flex;
     gap: 8px;
     overflow-x: auto;
     white-space: nowrap;
-    padding-bottom: 2px;
+    padding: 8px 10px;
+    box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(18px) saturate(150%);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: 999px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.category-row::-webkit-scrollbar {
+    display: none;
 }
 
 .category-pill {
@@ -181,6 +197,8 @@ const filteredProducts = computed(() => {
 .product-scroll {
     flex: 1;
     min-height: 0;
+    padding-top: 52px;
+    box-sizing: border-box;
 }
 
 .product-grid {

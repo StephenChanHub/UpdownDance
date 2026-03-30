@@ -1,9 +1,5 @@
 <template>
-    <view
-        class="postcard-shell"
-        :class="`ratio-${safeRatio}`"
-        @click="handleOpen"
-    >
+    <view class="postcard-shell" :class="`ratio-${safeRatio}`" @click="handleOpen">
         <view class="media-layer">
             <image v-if="firstImage" class="media-image" :src="firstImage" mode="aspectFill" />
             <view v-else class="media-placeholder">
@@ -73,10 +69,18 @@ const handleOpen = () => emit('open', props.post.id);
 }
 
 /* ── Aspect ratios ───────────────────────────────────────────────────── */
-.ratio-9-16  { aspect-ratio: 9 / 16; }
-.ratio-1-1   { aspect-ratio: 1 / 1; }
+.ratio-9-16 {
+    aspect-ratio: 9 / 16;
+}
+
+.ratio-1-1 {
+    aspect-ratio: 1 / 1;
+}
+
 /* 16:9 is full-width — handled by Explore layout, keep square-ish fallback */
-.ratio-16-9  { aspect-ratio: 16 / 9; }
+.ratio-16-9 {
+    aspect-ratio: 16 / 9;
+}
 
 /* ── Media ───────────────────────────────────────────────────────────── */
 .media-layer {
@@ -101,8 +105,16 @@ const handleOpen = () => emit('open', props.post.id);
     color: #c7c7cc;
 }
 
-.media-icon   { font-size: 38px; margin-bottom: 8px; }
-.media-label  { font-size: 10px; font-weight: 700; letter-spacing: 0.24em; }
+.media-icon {
+    font-size: 38px;
+    margin-bottom: 8px;
+}
+
+.media-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.24em;
+}
 
 /* ── Multi-image badge ───────────────────────────────────────────────── */
 .multi-badge {
@@ -127,22 +139,22 @@ const handleOpen = () => emit('open', props.post.id);
     position: absolute;
     inset: auto 0 0 0;
     padding: 12px 14px;
-    background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.58) 100%);
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.58) 100%);
     display: flex;
     flex-direction: column;
     gap: 4px;
 }
 
 .username-text {
-    font-size: 13px;
+    font-size: 20px;
     font-weight: 700;
     color: #fff;
 }
 
 .content-text {
-    font-size: 12px;
+    font-size: 16px;
     line-height: 1.35;
-    color: rgba(255, 255, 255, 0.88);
+    color: rgba(255, 255, 255, 0.9);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
