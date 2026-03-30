@@ -1,59 +1,88 @@
 <template>
-    <view class="main-postcard-shell" @click="handleOpen">
+    <view
+        class="postcard-shell"
+        :class="`ratio-${safeRatio}`"
+        @click="handleOpen"
+    >
         <view class="media-layer">
-            <image v-if="post.image" class="media-image" :src="post.image" mode="aspectFill" />
+            <image v-if="firstImage" class="media-image" :src="firstImage" mode="aspectFill" />
             <view v-else class="media-placeholder">
                 <text class="media-icon">🖼️</text>
                 <text class="media-label">I M A G E</text>
             </view>
+            <!-- multi-image badge -->
+            <view v-if="imageCount > 1" class="multi-badge">
+                <text class="multi-badge-text">1/{{ imageCount }}</text>
+            </view>
         </view>
 
         <view class="content-overlay">
-            <text class="username-text">@{{ post.username || '用户名' }}</text>
+            <text class="username-text">@{{ post.username || 'anonymous' }}</text>
             <text class="content-text">{{ previewContent }}</text>
         </view>
     </view>
 </template>
 
 <script setup>
+import { computed } from 'vue';
+
 const props = defineProps({
-    post: {
-        type: Object,
-        required: true,
-    },
+    post: { type: Object, required: true },
 });
 
 const emit = defineEmits(['open']);
-const post = props.post;
 
-const previewContent = ((post.content || '').trim() || '').slice(0, 10);
+const VALID_RATIOS = ['9:16', '16:9', '1:1'];
 
-const handleOpen = () => {
-    emit('open', post.id);
-};
+const safeRatio = computed(() => {
+    const r = props.post.ratio || '9:16';
+    return VALID_RATIOS.includes(r) ? r.replace(':', '-') : '9-16';
+});
+
+const firstImage = computed(() => {
+    const p = props.post;
+    return p.images?.[0] || p.image || '';
+});
+
+const imageCount = computed(() => {
+    const p = props.post;
+    return p.images?.length || (p.image ? 1 : 0);
+});
+
+const previewContent = computed(() =>
+    ((props.post.content || '').trim()).slice(0, 20)
+);
+
+const handleOpen = () => emit('open', props.post.id);
 </script>
 
 <style scoped>
-.main-postcard-shell {
+.postcard-shell {
     position: relative;
     width: 100%;
-    aspect-ratio: 0.74;
     background: #ffffff;
-    border-radius: 24px;
+    border-radius: 20px;
     overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
     transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
 }
 
-.main-postcard-shell:active {
+.postcard-shell:active {
     transform: scale(0.97);
 }
 
+/* ── Aspect ratios ───────────────────────────────────────────────────── */
+.ratio-9-16  { aspect-ratio: 9 / 16; }
+.ratio-1-1   { aspect-ratio: 1 / 1; }
+/* 16:9 is full-width — handled by Explore layout, keep square-ish fallback */
+.ratio-16-9  { aspect-ratio: 16 / 9; }
+
+/* ── Media ───────────────────────────────────────────────────────────── */
 .media-layer {
     position: absolute;
     inset: 0;
-    background: #f2f2f7;
+    background: #1c1c1e;
 }
 
 .media-image {
@@ -72,37 +101,48 @@ const handleOpen = () => {
     color: #c7c7cc;
 }
 
-.media-icon {
-    font-size: 38px;
-    margin-bottom: 8px;
+.media-icon   { font-size: 38px; margin-bottom: 8px; }
+.media-label  { font-size: 10px; font-weight: 700; letter-spacing: 0.24em; }
+
+/* ── Multi-image badge ───────────────────────────────────────────────── */
+.multi-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border-radius: 999px;
+    padding: 2px 8px;
 }
 
-.media-label {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.24em;
+.multi-badge-text {
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
 }
 
+/* ── Content overlay ─────────────────────────────────────────────────── */
 .content-overlay {
     position: absolute;
     inset: auto 0 0 0;
-    padding: 14px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(18, 18, 22, 0.55) 100%);
+    padding: 12px 14px;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.58) 100%);
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
 }
 
 .username-text {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 700;
     color: #fff;
 }
 
 .content-text {
-    font-size: 13px;
+    font-size: 12px;
     line-height: 1.35;
-    color: rgba(255, 255, 255, 0.92);
+    color: rgba(255, 255, 255, 0.88);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

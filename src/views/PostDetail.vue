@@ -6,11 +6,21 @@
       <text class="back-icon">‹</text>
     </view>
 
-    <!-- Hero image — fixed background -->
-    <view class="hero-wrap">
-      <image v-if="post.image" class="hero-image" :src="post.image" mode="widthFix" />
+    <!-- Hero images — fixed swiper, left/right to switch -->
+    <view class="hero-wrap" :style="{ aspectRatio: heroAspectRatio }">
+      <swiper v-if="postImages.length" class="hero-swiper" circular :indicator-dots="postImages.length > 1"
+        indicator-color="rgba(255,255,255,0.5)" indicator-active-color="#ffffff"
+        @change="currentImageIndex = $event.detail.current">
+        <swiper-item v-for="(img, i) in postImages" :key="i" @click="previewImage(i)">
+          <image class="hero-image" :src="img" mode="aspectFit" />
+        </swiper-item>
+      </swiper>
       <view v-else class="hero-placeholder">
         <text class="hero-placeholder-icon">🖼️</text>
+      </view>
+      <!-- image count badge -->
+      <view v-if="postImages.length > 1" class="img-count-badge">
+        <text class="img-count-text">{{ currentImageIndex + 1 }}/{{ postImages.length }}</text>
       </view>
     </view>
 
@@ -118,6 +128,27 @@ const { selectedPost } = usePostStore();
 const { closePostDetail } = useAppViewStore();
 
 const post = computed(() => selectedPost.value);
+
+const postImages = computed(() => {
+  if (!post.value) return [];
+  return post.value.images?.length ? post.value.images : (post.value.image ? [post.value.image] : []);
+});
+
+// Map post.ratio to CSS aspect-ratio value
+const heroAspectRatio = computed(() => {
+  const ratio = post.value?.ratio || '9:16';
+  const map = { '9:16': '9/16', '16:9': '16/9', '1:1': '1/1' };
+  return map[ratio] || '9/16';
+});
+
+const currentImageIndex = ref(0);
+
+const previewImage = (index) => {
+  uni.previewImage({
+    current: postImages.value[index],
+    urls: postImages.value,
+  });
+};
 
 const avatarLabel = computed(() => {
   const name = post.value?.username || '';
@@ -303,12 +334,19 @@ const handleBack = () => closePostDetail();
 .hero-wrap {
   position: relative;
   width: 100%;
-  z-index: 0;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: #000;
+}
+
+.hero-swiper {
+  width: 100%;
+  height: 100%;
 }
 
 .hero-image {
   width: 100%;
-  height: auto;
+  height: 100%;
   display: block;
 }
 
@@ -326,6 +364,23 @@ const handleBack = () => closePostDetail();
   opacity: 0.4;
 }
 
+.img-count-badge {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+.img-count-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+}
+
 /* ── Content card — draggable ────────────────────────────────────────── */
 .content-card {
   position: fixed;
@@ -334,19 +389,22 @@ const handleBack = () => closePostDetail();
   bottom: 0;
   top: 0;
   z-index: 10;
-  border-radius: 28px 28px 0 0;
+  border-radius: 30px 30px 30px 30px;
   padding: 12px 20px 0;
   box-sizing: border-box;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(32px) saturate(160%);
-  -webkit-backdrop-filter: blur(32px) saturate(160%);
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
   border: 1px solid rgba(255, 255, 255, 0.62);
-  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.3);
 }
 
 /* ── Card handle ─────────────────────────────────────────────────────── */
@@ -483,8 +541,10 @@ const handleBack = () => closePostDetail();
 }
 
 .comments-scroll {
+  height: 100%;
   width: 100%;
   overflow: hidden;
+
 }
 
 .comments-empty {

@@ -5,14 +5,16 @@ const posts = ref([]);
 const selectedPostId = ref(null);
 const searchQuery = ref('');
 
-const createPost = ({ image, title, content }) => {
+const createPost = ({ images, image, title, content, ratio }) => {
   const id = Date.now().toString();
   const { user } = useAuthStore();
 
   posts.value.unshift({
     id,
-    image,
-    title: title?.trim() || 'Untitled',
+    image:   images?.[0] || image || '',
+    images:  images || (image ? [image] : []),
+    ratio:   ratio || '9:16',
+    title:   title?.trim() || 'Untitled',
     content: content?.trim() || '',
     username: user.nickname || user.account || 'Anonymous',
     createdAt: new Date().toISOString(),

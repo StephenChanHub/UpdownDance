@@ -27,22 +27,23 @@
 
             <view class="view-header"></view>
 
-            <view v-if="posts.length" class="waterfall-container">
-                <view class="waterfall-column">
-                    <MainPostCard v-for="post in leftColumnPosts" :key="post.id" :post="post" class="waterfall-item"
-                        @open="openPost" />
-                </view>
-
-                <view class="waterfall-column">
-                    <MainPostCard v-for="post in rightColumnPosts" :key="post.id" :post="post" class="waterfall-item"
-                        @open="openPost" />
-                </view>
+            <view v-if="posts.length" class="feed-container">
+                <template v-for="(row, ri) in feedRows" :key="ri">
+                    <!-- 16:9 full-width card -->
+                    <view v-if="row.type === 'wide'" class="feed-wide">
+                        <MainPostCard :post="row.post" @open="openPost" />
+                    </view>
+                    <!-- pair of 9:16 or 1:1 cards -->
+                    <view v-else-if="row.type === 'pair'" class="feed-pair">
+                        <MainPostCard :post="row.posts[0]" @open="openPost" />
+                        <MainPostCard v-if="row.posts[1]" :post="row.posts[1]" @open="openPost" />
+                        <view v-else class="feed-pair-empty" />
+                    </view>
+                </template>
             </view>
 
             <view v-else class="empty-state">
-
                 <text class="empty-title">No postcards yet</text>
-
             </view>
 
             <AddButton class="add" @click="openCreate" />
@@ -63,12 +64,30 @@ const activeTab = ref('Explore');
 const { posts, selectPost } = usePostStore();
 const { openPostCreate, openPostDetail } = useAppViewStore();
 
-const leftColumnPosts = computed(() => posts.value.filter((_, i) => i % 2 === 0));
-const rightColumnPosts = computed(() => posts.value.filter((_, i) => i % 2 !== 0));
+// Build feed rows: 16:9 → full-width row; others → paired rows
+const feedRows = computed(() => {
+    const rows = [];
+    const narrow = []; // buffer for non-wide posts
 
-const openCreate = () => {
-    openPostCreate();
-};
+    const flushNarrow = () => {
+        while (narrow.length > 0) {
+            rows.push({ type: 'pair', posts: narrow.splice(0, 2) });
+        }
+    };
+
+    for (const post of posts.value) {
+        if ((post.ratio || '9:16') === '16:9') {
+            flushNarrow();
+            rows.push({ type: 'wide', post });
+        } else {
+            narrow.push(post);
+        }
+    }
+    flushNarrow();
+    return rows;
+});
+
+const openCreate = () => openPostCreate();
 
 const openPost = (id) => {
     selectPost(id);
@@ -162,27 +181,30 @@ const openPost = (id) => {
     padding-left: 10px;
 }
 
-.waterfall-container {
+.feed-container {
     display: flex;
-    gap: 20px;
-    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
     width: 100%;
-    max-width: 1000px;
-    margin: 0 auto;
     padding: 0 12px 80px;
     box-sizing: border-box;
 }
 
-.waterfall-column {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+/* 16:9 — full width */
+.feed-wide {
+    width: 100%;
 }
 
-.waterfall-item {
-    width: 100% !important;
-    margin: 0 !important;
+/* pair row — two equal columns */
+.feed-pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+}
+
+.feed-pair-empty {
+    /* placeholder to keep grid balanced */
 }
 
 .empty-state {

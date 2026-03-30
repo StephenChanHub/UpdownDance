@@ -65,20 +65,28 @@
                 <text class="empty-tip">Sign in to view your posts, collections and likes.</text>
             </view>
 
-            <!-- Note grid -->
-            <view v-else class="note-grid">
-                <view v-if="filteredNotes.length === 0" class="empty-state">
+            <!-- Notes feed (synced from published posts) -->
+            <view v-else-if="activeTab === 'Notes'" class="notes-feed-container">
+                <view v-if="feedRows.length === 0" class="empty-state">
                     <text class="empty-icon">✦</text>
-                    <text class="empty-title">No content yet</text>
+                    <text class="empty-title">No posts yet</text>
                 </view>
-                <view v-for="item in filteredNotes" :key="item.id" class="note-card">
-                    <view class="cover"><text class="cover-tag">{{ item.tag }}</text></view>
-                    <text class="note-title">{{ item.title }}</text>
-                    <view class="note-meta">
-                        <text class="meta-left">{{ item.category }}</text>
-                        <text class="meta-right">❤ {{ item.likes }}</text>
+                <template v-else v-for="(row, ri) in feedRows" :key="ri">
+                    <view v-if="row.type === 'wide'" class="feed-wide">
+                        <MainPostCard :post="row.post" @open="handleOpenPost" />
                     </view>
-                </view>
+                    <view v-else class="feed-pair">
+                        <MainPostCard :post="row.posts[0]" @open="handleOpenPost" />
+                        <MainPostCard v-if="row.posts[1]" :post="row.posts[1]" @open="handleOpenPost" />
+                        <view v-else class="feed-pair-empty" />
+                    </view>
+                </template>
+            </view>
+
+            <!-- Placeholder for Collects / Likes -->
+            <view v-else class="empty-state">
+                <text class="empty-icon">✦</text>
+                <text class="empty-title">No content yet</text>
             </view>
 
         </scroll-view>
@@ -165,17 +173,53 @@
 <script setup>
 import { computed, reactive, ref } from 'vue';
 import { useAuthStore } from '../stores/authStore';
+import { usePostStore } from '../stores/postStore';
+import { useAppViewStore } from '../stores/appViewStore';
+import MainPostCard from '../components/MainPostCard.vue';
 
 const { isLoggedIn, user, avatarLabel, login, register, updateProfile, logout } = useAuthStore();
+const { posts, selectPost } = usePostStore();
+const { openPostDetail } = useAppViewStore();
 
 // ─── Tabs & content ───────────────────────────────────────────────────────────
 const tabs = ['Notes', 'Collects', 'Likes'];
 const activeTab = ref('Notes');
-const notes = ref([]);
 
-const filteredNotes = computed(() =>
-    notes.value.filter((item) => item.group === activeTab.value)
-);
+const notesPosts = computed(() => {
+    if (!isLoggedIn.value) return [];
+    const identity = [user.nickname, user.account].filter(Boolean);
+    return posts.value.filter((p) => identity.includes(p.username));
+});
+
+const feedRows = computed(() => {
+    if (activeTab.value !== 'Notes') return [];
+
+    const rows = [];
+    const narrow = [];
+
+    const flushNarrow = () => {
+        while (narrow.length > 0) {
+            rows.push({ type: 'pair', posts: narrow.splice(0, 2) });
+        }
+    };
+
+    for (const post of notesPosts.value) {
+        if ((post.ratio || '9:16') === '16:9') {
+            flushNarrow();
+            rows.push({ type: 'wide', post });
+        } else {
+            narrow.push(post);
+        }
+    }
+
+    flushNarrow();
+    return rows;
+});
+
+const handleOpenPost = (id) => {
+    selectPost(id);
+    openPostDetail();
+};
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
 const modalVisible = ref(false);
@@ -254,7 +298,6 @@ const confirmLogout = () => {
         success: ({ confirm }) => {
             if (!confirm) return;
             logout();
-            notes.value = [];
             uni.showToast({ title: 'Logged out', icon: 'none' });
         },
     });
@@ -440,62 +483,30 @@ const confirmLogout = () => {
     border-color: #007aff;
 }
 
-/* ── Note grid ──────────────────────────────────────────────────────── */
-.note-grid {
+/* ── Notes feed (Explore style) ─────────────────────────────────────── */
+.notes-feed-container {
     margin-top: 12px;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    flex-direction: column;
     gap: 10px;
+    width: 100%;
     padding-bottom: 10px;
+    box-sizing: border-box;
 }
 
-.note-card {
-    background: #fff;
-    border-radius: 14px;
-    padding: 10px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+.feed-wide {
+    width: 100%;
 }
 
-.cover {
-    height: 102px;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #e9f2ff, #dbe9ff);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.feed-pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
 }
 
-.cover-tag {
-    font-size: 12px;
-    font-weight: 700;
-    color: #2f5ea8;
-}
-
-.note-title {
-    display: block;
-    margin-top: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    color: #1c1c1e;
-    line-height: 1.3;
-}
-
-.note-meta {
-    margin-top: 6px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.meta-left {
-    font-size: 11px;
-    color: #8e8e93;
-}
-
-.meta-right {
-    font-size: 11px;
-    color: #ff3b30;
-    font-weight: 700;
+.feed-pair-empty {
+    /* placeholder for odd item count */
 }
 
 /* ── Empty state ─────────────────────────────────────────────────────── */

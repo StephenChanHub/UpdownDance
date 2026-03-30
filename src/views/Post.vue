@@ -1,47 +1,58 @@
 <template>
   <view class="post-page">
-    <view class="post-shell glass-card">
-      <view class="media-picker" @click="pickImage">
-        <image v-if="image" class="picked-media" :src="image" mode="aspectFill" />
-        <view v-else class="media-placeholder">
-          <view class="media-dashed-box">
-            <text class="media-plus">+</text>
+    <scroll-view class="post-scroll" scroll-y>
+      <view class="post-shell glass-card">
+
+        <!-- 3×3 image grid -->
+        <view class="media-grid">
+          <view v-for="(img, i) in gridSlots" :key="i" class="grid-cell" @click="img ? removeImage(i) : pickImages()">
+            <image v-if="img" class="grid-img" :src="img" mode="aspectFill" />
+            <view v-else class="grid-empty">
+              <text class="grid-plus">+</text>
+            </view>
+            <!-- Remove badge -->
+            <view v-if="img" class="grid-remove">
+              <text class="grid-remove-icon">X</text>
+            </view>
           </view>
         </view>
-      </view>
+        <text class="media-hint">{{ images.length }}/9 · Tap + to add, tap photo to remove</text>
 
-      <view class="field-block">
-        <text class="field-label">title</text>
-        <textarea
-          class="field-input title-textarea"
-          auto-height
-          maxlength="60"
-          :value="title"
-          placeholder="Give this postcard a title"
-          @input="title = $event.detail.value"
-        />
-      </view>
-
-      <view class="field-block">
-        <text class="field-label">content</text>
-        <textarea
-          class="field-textarea"
-          maxlength="300"
-          :value="content"
-          placeholder="Write something for your postcard"
-          @input="content = $event.detail.value"
-        />
-      </view>
-
-      <view class="action-row">
-        <view class="action-btn cancel-btn" @click="handleCancel">
-          <text>cancel</text>
+        <!-- Ratio selector -->
+        <view class="field-block">
+          <text class="field-label">Aspect Ratio</text>
+          <view class="ratio-row">
+            <view v-for="r in ['9:16', '1:1', '16:9']" :key="r" class="ratio-btn" :class="{ active: ratio === r }"
+              @click="ratio = r">
+              <view class="ratio-preview" :class="`rp-${r.replace(':', '-')}`" />
+              <text class="ratio-label">{{ r }}</text>
+            </view>
+          </view>
         </view>
-        <view class="action-btn submit-btn" @click="handleSubmit">
-          <text>submit</text>
+
+        <view class="field-block">
+          <text class="field-label">Title</text>
+          <textarea class="field-input title-textarea" auto-height maxlength="60" :value="title"
+            placeholder="Give this postcard a title" @input="title = $event.detail.value" />
         </view>
+
+        <view class="field-block">
+          <text class="field-label">Content</text>
+          <textarea class="field-textarea" maxlength="300" :value="content"
+            placeholder="Write something for your postcard" @input="content = $event.detail.value" />
+        </view>
+
+        <view class="action-row">
+          <view class="action-btn cancel-btn" @click="handleCancel">
+            <text>Cancel</text>
+          </view>
+          <view class="action-btn submit-btn" @click="handleSubmit">
+            <text>Submit</text>
+          </view>
+        </view>
+
       </view>
-    </view>
+    </scroll-view>
   </view>
 </template>
 
@@ -55,73 +66,86 @@ const { postMode, closePostCreate, closePostEdit, openPostDetail } = useAppViewS
 
 const title = ref('');
 const content = ref('');
-const image = ref('');
+const images = ref([]);
+const ratio = ref('9:16');
+
+const MAX = 9;
+const COLS = 3;
+
+// Always show a full 3×3 grid: filled cells + one empty slot (if room)
+const gridSlots = computed(() => {
+  const slots = [...images.value];
+  if (slots.length < MAX) slots.push(null); // one add-button slot
+  // pad to multiple of COLS for even grid
+  while (slots.length % COLS !== 0) slots.push(null);
+  return slots.slice(0, MAX + (MAX % COLS === 0 ? 0 : COLS - (MAX % COLS)));
+});
 
 const isEditMode = computed(() => postMode.value === 'edit' && Boolean(selectedPost.value));
 
-watch(
-  selectedPost,
-  (post) => {
-    if (!post || postMode.value === 'create') {
-      title.value = '';
-      content.value = '';
-      image.value = '';
-      return;
-    }
+const resetForm = () => {
+  title.value = '';
+  content.value = '';
+  images.value = [];
+  ratio.value = '9:16';
+};
 
-    title.value = post.title || '';
-    content.value = post.content || '';
-    image.value = post.image || '';
-  },
-  { immediate: true }
-);
+watch(selectedPost, (post) => {
+  if (!post || postMode.value === 'create') { resetForm(); return; }
+  title.value = post.title || '';
+  content.value = post.content || '';
+  images.value = post.images || (post.image ? [post.image] : []);
+}, { immediate: true });
 
-watch(
-  postMode,
-  (mode) => {
-    if (mode === 'create') {
-      title.value = '';
-      content.value = '';
-      image.value = '';
-    } else if (selectedPost.value) {
-      title.value = selectedPost.value.title || '';
-      content.value = selectedPost.value.content || '';
-      image.value = selectedPost.value.image || '';
-    }
-  },
-  { immediate: true }
-);
+watch(postMode, (mode) => {
+  if (mode === 'create') { resetForm(); return; }
+  if (selectedPost.value) {
+    title.value = selectedPost.value.title || '';
+    content.value = selectedPost.value.content || '';
+    images.value = selectedPost.value.images || (selectedPost.value.image ? [selectedPost.value.image] : []);
+  }
+}, { immediate: true });
 
-const pickImage = () => {
+const pickImages = () => {
+  const remaining = MAX - images.value.length;
+  if (remaining <= 0) return;
   uni.chooseImage({
-    count: 1,
+    count: remaining,
     sizeType: ['compressed'],
     sourceType: ['album'],
     success: (res) => {
-      image.value = res.tempFilePaths?.[0] || '';
+      images.value = [...images.value, ...(res.tempFilePaths || [])].slice(0, MAX);
+    },
+  });
+};
+
+const removeImage = (index) => {
+  uni.showModal({
+    title: 'Remove photo?',
+    content: 'This photo will be removed from the post.',
+    success: ({ confirm }) => {
+      if (!confirm) return;
+      images.value = images.value.filter((_, i) => i !== index);
     },
   });
 };
 
 const handleCancel = () => {
-  if (isEditMode.value) {
-    closePostEdit();
-    return;
-  }
-
+  if (isEditMode.value) { closePostEdit(); return; }
   clearSelectedPost();
   closePostCreate();
 };
 
 const handleSubmit = () => {
-  if (!image.value) {
-    uni.showToast({ title: 'Please add an image', icon: 'none' });
+  if (images.value.length === 0) {
+    uni.showToast({ title: 'Please add at least one image', icon: 'none' });
     return;
   }
 
   if (isEditMode.value && selectedPost.value) {
     updatePost(selectedPost.value.id, {
-      image: image.value,
+      images: images.value,
+      image: images.value[0],
       title: title.value,
       content: content.value,
     });
@@ -129,12 +153,7 @@ const handleSubmit = () => {
     return;
   }
 
-  createPost({
-    image: image.value,
-    title: title.value,
-    content: content.value,
-  });
-
+  createPost({ images: images.value, title: title.value, content: content.value, ratio: ratio.value });
   clearSelectedPost();
   closePostCreate();
 };
@@ -142,13 +161,16 @@ const handleSubmit = () => {
 
 <style scoped>
 .post-page {
+
   width: 100%;
   height: 100%;
-  padding: 28px 18px 34px;
   box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+}
+
+.post-scroll {
+
+  width: 100%;
+  height: 100%;
 }
 
 .glass-card {
@@ -161,30 +183,38 @@ const handleSubmit = () => {
 }
 
 .post-shell {
-  width: min(100%, 420px);
-  min-height: 78vh;
+  margin: 15% 18px 34px;
   padding: 22px 18px 18px;
   display: flex;
   flex-direction: column;
   gap: 18px;
 }
 
-.media-picker {
+/* ── 3×3 image grid ──────────────────────────────────────────────────── */
+.media-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
   width: 100%;
+}
+
+.grid-cell {
+  position: relative;
   aspect-ratio: 1 / 1;
-  border-radius: 28px;
+  border-radius: 14px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.58);
+  border: 1.5px dashed rgba(28, 28, 30, 0.14);
   cursor: pointer;
 }
 
-.picked-media {
+.grid-img {
   width: 100%;
   height: 100%;
   display: block;
 }
 
-.media-placeholder {
+.grid-empty {
   width: 100%;
   height: 100%;
   display: flex;
@@ -192,22 +222,39 @@ const handleSubmit = () => {
   justify-content: center;
 }
 
-.media-dashed-box {
-  width: calc(100% - 28px);
-  height: calc(100% - 28px);
-  border-radius: 24px;
-  border: 2px dashed rgba(28, 28, 30, 0.16);
+.grid-plus {
+  font-size: 32px;
+  font-weight: 200;
+  color: #007aff;
+}
+
+.grid-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.media-plus {
-  font-size: 64px;
-  font-weight: 200;
-  color: #007aff;
+.grid-remove-icon {
+  font-size: 11px;
+  color: #fff;
+  font-weight: 700;
 }
 
+.media-hint {
+  font-size: 12px;
+  color: #8e8e93;
+  text-align: center;
+  margin-top: -8px;
+}
+
+/* ── Fields ──────────────────────────────────────────────────────────── */
 .field-block {
   display: flex;
   flex-direction: column;
@@ -243,6 +290,62 @@ const handleSubmit = () => {
   min-height: 138px;
 }
 
+/* ── Ratio selector ─────────────────────────────────────────────────── */
+.ratio-row {
+  display: flex;
+  gap: 10px;
+}
+
+.ratio-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 6px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.68);
+  border: 1.5px solid rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: border-color 0.18s, background 0.18s;
+}
+
+.ratio-btn.active {
+  border-color: #007aff;
+  background: rgba(0, 122, 255, 0.08);
+}
+
+.ratio-preview {
+  background: #1c1c1e;
+  border-radius: 4px;
+}
+
+.rp-9-16 {
+  width: 18px;
+  height: 32px;
+}
+
+.rp-1-1 {
+  width: 26px;
+  height: 26px;
+}
+
+.rp-16-9 {
+  width: 36px;
+  height: 20px;
+}
+
+.ratio-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #3a3a3c;
+}
+
+.ratio-btn.active .ratio-label {
+  color: #007aff;
+}
+
+/* ── Actions ─────────────────────────────────────────────────────────── */
 .action-row {
   margin-top: auto;
   display: flex;

@@ -1,4 +1,4 @@
-<template>
+<!-- <template>
     <view class="ios-post-card">
         <view class="post-header">
             <view class="user-avatar-placeholder">
@@ -219,4 +219,4 @@ const handleAction = (type) => {
     color: #007AFF;
     /* iOS Blue */
 }
-</style>
+</style> -->

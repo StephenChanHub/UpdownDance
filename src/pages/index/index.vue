@@ -64,7 +64,7 @@ const showBottomNav = computed(() => ['Explore', 'Short', 'Store', 'Message', 'M
   bottom: calc(1% + env(safe-area-inset-bottom));
   left: 0;
   width: 100%;
-  height: 60px;
+  height: 8vh;
   display: flex;
   justify-content: center;
   z-index: 1000;
@@ -76,9 +76,9 @@ const showBottomNav = computed(() => ['Explore', 'Short', 'Store', 'Message', 'M
   backdrop-filter: blur(10px) saturate(150%);
   -webkit-backdrop-filter: blur(10px) saturate(150%);
   border-radius: 35px;
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   box-shadow:
-    0 18px 46px rgba(0, 0, 0, 0.12),
+    0 18px 46px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.35);
   display: flex;
   align-items: center;
