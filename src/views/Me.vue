@@ -251,7 +251,7 @@ const formAvatarLabel = computed(() =>
 );
 
 const pickAvatar = () => {
-    const uniAny = uni as any;
+    const uniAny = uni;
     uni.chooseImage({
         count: 1,
         sizeType: ['compressed'],
@@ -677,7 +677,7 @@ const confirmLogout = () => {
     align-items: center;
     justify-content: center;
     font-size: 14px;
-    color: #3a3a3c;
+    color: black;
 }
 
 /* ── Avatar row ─────────────────────────────────────────────────────── */

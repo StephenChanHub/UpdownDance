@@ -27,11 +27,11 @@ const openPostEdit = () => {
 };
 
 const closePostCreate = () => {
-  activeView.value = 'Explore';
+  activeView.value = lastMainView.value;
 };
 
 const closePostDetail = () => {
-  activeView.value = 'Explore';
+  activeView.value = lastMainView.value;
 };
 
 const closePostEdit = () => {

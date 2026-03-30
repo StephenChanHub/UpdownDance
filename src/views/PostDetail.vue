@@ -123,8 +123,8 @@ import { usePostStore } from '../stores/postStore';
 import { useAppViewStore } from '../stores/appViewStore';
 import moreIcon from '../../public/img/more.png';
 
-const { selectedPost } = usePostStore();
-const { closePostDetail } = useAppViewStore();
+const { selectedPost, deletePost, clearSelectedPost } = usePostStore();
+const { closePostDetail, openPostEdit } = useAppViewStore();
 
 const post = computed(() => selectedPost.value);
 
@@ -175,7 +175,7 @@ const BACK_BTN_TOP = 10;
 const BOTTOM_BAR_H = 70;
 
 const minY = computed(() => safeTop.value + BACK_BTN_TOP + BACK_BTN_H + 2);
-const maxY = computed(() => Math.max(minY.value + 20, heroHeight.value + 100));
+const maxY = computed(() => Math.max(minY.value + 20, heroHeight.value - 20));
 const cardY = ref(0);
 const isPinned = ref(false);
 
@@ -252,11 +252,33 @@ const cancelReply = () => {
 const handleShare = () => uni.showToast({ title: 'Link copied!', icon: 'none' });
 
 const handleMore = () => {
+  const actions = ['Modify', 'Delete', 'Cancel'];
   uni.showActionSheet({
-    itemList: ['Report', 'Not Interested', 'Copy Link'],
+    itemList: actions,
     success: ({ tapIndex }) => {
-      const actions = ['Report', 'Not Interested', 'Copy Link'];
-      uni.showToast({ title: actions[tapIndex], icon: 'none' });
+      const action = actions[tapIndex];
+
+      if (action === 'Modify') {
+        openPostEdit();
+        return;
+      }
+
+      if (action === 'Delete') {
+        uni.showModal({
+          title: 'Delete this post?',
+          content: 'This action cannot be undone.',
+          success: ({ confirm }) => {
+            if (!confirm || !post.value?.id) return;
+            deletePost(post.value.id);
+            clearSelectedPost();
+            closePostDetail();
+            uni.showToast({ title: 'Deleted', icon: 'none' });
+          },
+        });
+        return;
+      }
+
+      // Cancel
     },
   });
 };
@@ -317,6 +339,11 @@ const handleBack = () => closePostDetail();
 .hero-swiper {
   width: 100%;
   height: 100%;
+}
+
+/* swiper 底部小圆点上移：距离底部 10px */
+:deep(.hero-swiper .uni-swiper-dots) {
+  bottom: 20px !important;
 }
 
 .hero-image {
@@ -683,7 +710,7 @@ const handleBack = () => closePostDetail();
 
 .bar-icon {
   font-size: 22px;
-  color: #3a3a3c;
+  color: black;
   line-height: 1;
 }
 
@@ -692,9 +719,9 @@ const handleBack = () => closePostDetail();
 }
 
 .bar-icon-label {
-  font-size: 10px;
+  font-size: 14px;
   font-weight: 600;
-  color: #8e8e93;
+  color: white;
 }
 
 .comment-input-wrap {
