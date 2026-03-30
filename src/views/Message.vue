@@ -1,8 +1,7 @@
 <template>
   <view class="message-page">
-    <view class="header">
+    <view class="msg-glass-header">
       <text class="title">Messages</text>
-      <text class="sub-title">Simple Queue</text>
     </view>
 
     <scroll-view class="queue-scroll" scroll-y>
@@ -53,7 +52,7 @@ const toggleRead = (id) => {
   width: 100%;
   height: 100%;
   box-sizing: border-box;
-  padding: 76px 14px 18px;
+  padding: calc(env(safe-area-inset-top) + 58px) 14px 18px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -61,8 +60,26 @@ const toggleRead = (id) => {
   background: linear-gradient(180deg, #f5f6fa 0%, #eceef5 100%);
 }
 
-.header {
-  padding: 2px 4px 8px;
+.msg-glass-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  width: 100%;
+  height: calc(env(safe-area-inset-top) + 50px);
+  padding-top: env(safe-area-inset-top);
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  padding-left: 20px;
+  padding-bottom: 10px;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  touch-action: none;
 }
 
 .title {
@@ -72,12 +89,7 @@ const toggleRead = (id) => {
   color: #1c1c1e;
 }
 
-.sub-title {
-  display: block;
-  margin-top: 2px;
-  font-size: 12px;
-  color: #8e8e93;
-}
+
 
 .queue-scroll {
   flex: 1;

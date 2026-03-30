@@ -145,7 +145,7 @@
                 <view class="modal-btn cancel-btn" @click="closeModal"><text>Cancel</text></view>
                 <view class="modal-btn submit-btn" @click="handleSubmit">
                     <text>{{ modalMode === 'login' ? 'Sign In' : modalMode === 'register' ? 'Register' : 'Save'
-                        }}</text>
+                    }}</text>
                 </view>
             </view>
 
