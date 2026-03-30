@@ -27,7 +27,7 @@
 
             <view class="view-header"></view>
 
-            <view v-if="posts.length" class="feed-container">
+            <view v-if="feedRows.length" class="feed-container">
                 <template v-for="(row, ri) in feedRows" :key="ri">
                     <!-- 16:9 full-width card -->
                     <view v-if="row.type === 'wide'" class="feed-wide">
@@ -64,10 +64,30 @@ const activeTab = ref('Explore');
 const { posts, selectPost } = usePostStore();
 const { openPostCreate, openPostDetail } = useAppViewStore();
 
+const tabPosts = computed(() => {
+    if (activeTab.value === 'Followed') {
+        return posts.value.filter((_, i) => i % 2 === 0);
+    }
+    if (activeTab.value === 'Popular') {
+        return [...posts.value].sort((a, b) => {
+            const aScore = (a.images?.length || 1) + (a.content?.length || 0);
+            const bScore = (b.images?.length || 1) + (b.content?.length || 0);
+            return bScore - aScore;
+        });
+    }
+    if (activeTab.value === 'Local') {
+        return posts.value.filter((p) => {
+            const name = (p.username || '').toLowerCase();
+            return name.includes('local') || name.includes('cn') || name.includes('city');
+        });
+    }
+    return posts.value;
+});
+
 // Build feed rows: 16:9 → full-width row; others → paired rows
 const feedRows = computed(() => {
     const rows = [];
-    const narrow = []; // buffer for non-wide posts
+    const narrow = [];
 
     const flushNarrow = () => {
         while (narrow.length > 0) {
@@ -75,7 +95,7 @@ const feedRows = computed(() => {
         }
     };
 
-    for (const post of posts.value) {
+    for (const post of tabPosts.value) {
         if ((post.ratio || '9:16') === '16:9') {
             flushNarrow();
             rows.push({ type: 'wide', post });
@@ -83,6 +103,7 @@ const feedRows = computed(() => {
             narrow.push(post);
         }
     }
+
     flushNarrow();
     return rows;
 });
@@ -229,12 +250,12 @@ const openPost = (id) => {
 
 
 @media (max-width: 600px) {
-    .waterfall-container {
+    .feed-container {
         gap: 10px;
         padding: 0 8px 80px;
     }
 
-    .waterfall-column {
+    .feed-pair {
         gap: 10px;
     }
 }
