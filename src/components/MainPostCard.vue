@@ -8,13 +8,13 @@
             </view>
             <!-- multi-image badge -->
             <view v-if="imageCount > 1" class="multi-badge">
-                <text class="multi-badge-text">1/{{ imageCount }}</text>
+                <text class="multi-badge-text">{{ imageCount }}</text>
             </view>
         </view>
 
         <view class="content-overlay">
             <text class="username-text">@{{ post.username || 'anonymous' }}</text>
-            <text class="content-text">{{ previewContent }}</text>
+            <text class="content-text">{{ previewText }}</text>
         </view>
     </view>
 </template>
@@ -45,9 +45,15 @@ const imageCount = computed(() => {
     return p.images?.length || (p.image ? 1 : 0);
 });
 
+const previewTitle = computed(() =>
+    ((props.post.title || '').trim()).slice(0, 20)
+);
+
 const previewContent = computed(() =>
     ((props.post.content || '').trim()).slice(0, 20)
 );
+
+const previewText = computed(() => previewTitle.value || previewContent.value || ' ');
 
 const handleOpen = () => emit('open', props.post.id);
 </script>
@@ -121,15 +127,15 @@ const handleOpen = () => emit('open', props.post.id);
     position: absolute;
     top: 8px;
     right: 8px;
-    background: rgba(0, 0, 0, 0.45);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border-radius: 50%;
     padding: 2px 8px;
 }
 
 .multi-badge-text {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     color: #fff;
 }

@@ -166,12 +166,12 @@ const filteredProducts = computed(() => {
     white-space: nowrap;
     padding: 8px 10px;
     box-sizing: border-box;
-    background: rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(18px) saturate(150%);
     -webkit-backdrop-filter: blur(18px) saturate(150%);
     border: 1px solid rgba(255, 255, 255, 0.45);
     border-radius: 999px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
 .category-row::-webkit-scrollbar {

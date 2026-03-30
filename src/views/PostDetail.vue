@@ -7,12 +7,12 @@
     </view>
 
     <!-- Hero images — fixed swiper, left/right to switch -->
-    <view class="hero-wrap" :style="{ aspectRatio: heroAspectRatio }">
+    <view class="hero-wrap" :style="{ height: `${heroHeight}px` }">
       <swiper v-if="postImages.length" class="hero-swiper" circular :indicator-dots="postImages.length > 1"
         indicator-color="rgba(255,255,255,0.5)" indicator-active-color="#ffffff"
         @change="currentImageIndex = $event.detail.current">
         <swiper-item v-for="(img, i) in postImages" :key="i" @click="previewImage(i)">
-          <image class="hero-image" :src="img" mode="aspectFit" />
+          <image class="hero-image" :src="img" mode="aspectFill" />
         </swiper-item>
       </swiper>
       <view v-else class="hero-placeholder">
@@ -25,10 +25,9 @@
     </view>
 
     <!-- Draggable content card -->
-    <view class="content-card glass-card" :style="{ transform: `translateY(${cardY}px)` }" @touchstart="onTouchStart"
-      @touchmove="onTouchMove" @touchend="onTouchEnd">
+    <view class="content-card glass-card" :style="{ transform: `translateY(${cardY}px)` }">
       <!-- Card handle -->
-      <view class="card-handle" />
+      <view class="card-handle" @click="toggleCard" />
 
       <!-- Author row -->
       <view class="meta-row">
@@ -134,11 +133,14 @@ const postImages = computed(() => {
   return post.value.images?.length ? post.value.images : (post.value.image ? [post.value.image] : []);
 });
 
-// Map post.ratio to CSS aspect-ratio value
-const heroAspectRatio = computed(() => {
+const screenW = ref(390);
+
+// Hero area keeps physical position fixed; height follows first image ratio
+const heroHeight = computed(() => {
   const ratio = post.value?.ratio || '9:16';
-  const map = { '9:16': '9/16', '16:9': '16/9', '1:1': '1/1' };
-  return map[ratio] || '9/16';
+  const ratioMap = { '9:16': 16 / 9, '16:9': 9 / 16, '1:1': 1 };
+  const hByRatio = screenW.value * (ratioMap[ratio] || 16 / 9);
+  return Math.max(220, Math.min(hByRatio, screenW.value * 1.45));
 });
 
 const currentImageIndex = ref(0);
@@ -168,13 +170,12 @@ const formattedDate = computed(() => {
 
 const screenH = ref(750);   // updated on mount
 const safeTop = ref(44);    // status bar + back-btn area
-const BACK_BTN_H = 40;         // back-btn height
-const BACK_BTN_TOP = 10;         // back-btn top offset (px, excluding safe area)
-const CARD_PEEK = 320;        // how many px of card visible initially
+const BACK_BTN_H = 40;
+const BACK_BTN_TOP = 10;
 const BOTTOM_BAR_H = 70;
 
 const minY = computed(() => safeTop.value + BACK_BTN_TOP + BACK_BTN_H + 2);
-const maxY = computed(() => screenH.value - CARD_PEEK);
+const maxY = computed(() => Math.max(minY.value + 20, heroHeight.value - 4));
 const cardY = ref(0);
 const isPinned = ref(false);
 
@@ -191,49 +192,19 @@ const commentsScrollHeight = computed(() => {
 onMounted(() => {
   const info = uni.getSystemInfoSync();
   screenH.value = info.windowHeight || 750;
+  screenW.value = info.windowWidth || 390;
   safeTop.value = (info.safeAreaInsets?.top ?? info.statusBarHeight ?? 44);
   cardY.value = maxY.value;
 });
 
-let touchStartY = 0;
-let touchStartCardY = 0;
-let isDraggingCard = false;
-
-const onTouchStart = (e) => {
-  touchStartY = e.touches[0].clientY;
-  touchStartCardY = cardY.value;
-  isDraggingCard = false;
-};
-
-const onTouchMove = (e) => {
-  const dy = e.touches[0].clientY - touchStartY;
-
-  // If pinned, only allow downward drag to unpin
+const toggleCard = () => {
   if (isPinned.value) {
-    if (dy > 8) {
-      isDraggingCard = true;
-      isPinned.value = false;
-      touchStartCardY = minY.value;
-    } else {
-      return;
-    }
-  }
-
-  const next = touchStartCardY + dy;
-  cardY.value = Math.min(maxY.value, Math.max(minY.value, next));
-};
-
-const onTouchEnd = () => {
-  if (isPinned.value) return;
-  const mid = (minY.value + maxY.value) / 2;
-  if (cardY.value < mid) {
-    cardY.value = minY.value;
-    isPinned.value = true;
-  } else {
     cardY.value = maxY.value;
     isPinned.value = false;
+  } else {
+    cardY.value = minY.value;
+    isPinned.value = true;
   }
-  isDraggingCard = false;
 };
 
 // ─── Actions ─────────────────────────────────────────────────────────
@@ -330,13 +301,17 @@ const handleBack = () => closePostDetail();
   margin-top: -2px;
 }
 
-/* ── Hero — background ──────────────────────────────────────────────── */
+/* ── Hero — fixed background ────────────────────────────────────────── */
 .hero-wrap {
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
   width: 100%;
   flex-shrink: 0;
   overflow: hidden;
   background: #000;
+  z-index: 0;
 }
 
 .hero-swiper {
@@ -389,10 +364,10 @@ const handleBack = () => closePostDetail();
   bottom: 0;
   top: 0;
   z-index: 10;
-  border-radius: 30px 30px 30px 30px;
+  border-radius: 30px 30px 0 0;
   padding: 12px 20px 0;
   box-sizing: border-box;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.26s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform;
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(20px) saturate(160%);
@@ -412,7 +387,7 @@ const handleBack = () => closePostDetail();
   width: 36px;
   height: 4px;
   border-radius: 2px;
-  background: rgba(0, 0, 0, 0.18);
+  background: white;
   margin: 0 auto 14px;
 }
 
@@ -590,17 +565,17 @@ const handleBack = () => closePostDetail();
 
 .comment-name {
   display: block;
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 700;
-  color: #1c1c1e;
+  color: white;
   margin-bottom: 3px;
 }
 
 .comment-text {
   display: block;
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.45;
-  color: #3a3a3c;
+  color: black;
 }
 
 .comments-bottom-spacer {
