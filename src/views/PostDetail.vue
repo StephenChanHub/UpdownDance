@@ -125,7 +125,7 @@ import { useAuthStore } from '../stores/authStore';
 import { useAppViewStore } from '../stores/appViewStore';
 import moreIcon from '../../public/img/more.png';
 
-const { selectedPost, deletePost, clearSelectedPost } = usePostStore();
+const { selectedPost, selectedPostId, fetchPostDetail, deletePost, clearSelectedPost } = usePostStore();
 const { user } = useAuthStore();
 const { closePostDetail, openPostEdit } = useAppViewStore();
 
@@ -205,6 +205,11 @@ onMounted(() => {
   screenW.value = info.windowWidth || 390;
   safeTop.value = (info.safeAreaInsets?.top ?? info.statusBarHeight ?? 44);
   cardY.value = maxY.value;
+  if (selectedPostId.value) {
+    fetchPostDetail(selectedPostId.value).catch(() => {
+      // ignore detail refresh errors
+    });
+  }
 });
 
 const toggleCard = () => {
@@ -279,10 +284,13 @@ const handleMore = () => {
           content: 'This action cannot be undone.',
           success: ({ confirm }) => {
             if (!confirm || !post.value?.id) return;
-            deletePost(post.value.id);
-            clearSelectedPost();
-            closePostDetail();
-            uni.showToast({ title: 'Deleted', icon: 'none' });
+            deletePost(post.value.id).then(() => {
+              clearSelectedPost();
+              closePostDetail();
+              uni.showToast({ title: 'Deleted', icon: 'none' });
+            }).catch((error) => {
+              uni.showToast({ title: error.message || 'Delete failed', icon: 'none' });
+            });
           },
         });
         return;

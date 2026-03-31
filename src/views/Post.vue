@@ -136,26 +136,36 @@ const handleCancel = () => {
   closePostCreate();
 };
 
-const handleSubmit = () => {
+const handleSubmit = async () => {
   if (images.value.length === 0) {
     uni.showToast({ title: 'Please add at least one image', icon: 'none' });
     return;
   }
 
   if (isEditMode.value && selectedPost.value) {
-    updatePost(selectedPost.value.id, {
-      images: images.value,
-      image: images.value[0],
-      title: title.value,
-      content: content.value,
-    });
-    openPostDetail();
+    try {
+      await updatePost(selectedPost.value.id, {
+        images: images.value,
+        image: images.value[0],
+        title: title.value,
+        content: content.value,
+        ratio: ratio.value,
+      });
+      openPostDetail();
+    } catch (error) {
+      uni.showToast({ title: error.message || 'Update failed', icon: 'none' });
+    }
     return;
   }
 
-  createPost({ images: images.value, title: title.value, content: content.value, ratio: ratio.value });
-  clearSelectedPost();
-  closePostCreate();
+  try {
+    await createPost({ images: images.value, title: title.value, content: content.value, ratio: ratio.value });
+    clearSelectedPost();
+    closePostCreate();
+    uni.showToast({ title: 'Published', icon: 'success' });
+  } catch (error) {
+    uni.showToast({ title: error.message || 'Create failed', icon: 'none' });
+  }
 };
 </script>
 

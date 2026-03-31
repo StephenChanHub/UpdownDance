@@ -1,7 +1,7 @@
 <template>
     <view class="explore-page">
         <view class="search">
-            <SearchIsland />
+            <SearchIsland v-model="keyword" />
         </view>
 
         <view class="explore-scroll-wrapper">
@@ -52,7 +52,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import MainPostCard from '../components/MainPostCard.vue';
 import AddButton from '../components/AddButton.vue';
 import SearchIsland from '../components/SearchIsland.vue';
@@ -61,8 +61,9 @@ import { useAppViewStore } from '../stores/appViewStore';
 
 const activeTab = ref('Explore');
 
-const { posts, selectPost } = usePostStore();
+const { posts, selectPost, fetchPosts } = usePostStore();
 const { openPostCreate, openPostDetail } = useAppViewStore();
+const keyword = ref('');
 
 const tabPosts = computed(() => {
     if (activeTab.value === 'Followed') {
@@ -114,6 +115,18 @@ const openPost = (id) => {
     selectPost(id);
     openPostDetail();
 };
+
+watch(keyword, (value) => {
+    fetchPosts({ keyword: value || undefined }).catch((error) => {
+        uni.showToast({ title: error.message || 'Load failed', icon: 'none' });
+    });
+});
+
+onMounted(() => {
+    fetchPosts().catch((error) => {
+        uni.showToast({ title: error.message || 'Load failed', icon: 'none' });
+    });
+});
 </script>
 
 <style scoped>
