@@ -32,7 +32,8 @@
       <!-- Author row -->
       <view class="meta-row">
         <view class="author-avatar">
-          <text class="author-avatar-text">{{ avatarLabel }}</text>
+          <image v-if="authorAvatar" class="author-avatar-img" :src="authorAvatar" mode="aspectFill" />
+          <text v-else class="author-avatar-text">{{ avatarLabel }}</text>
         </view>
         <view class="author-info">
           <text class="author-name">{{ post.username || 'Anonymous' }}</text>
@@ -120,10 +121,12 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import { usePostStore } from '../stores/postStore';
+import { useAuthStore } from '../stores/authStore';
 import { useAppViewStore } from '../stores/appViewStore';
 import moreIcon from '../../public/img/more.png';
 
 const { selectedPost, deletePost, clearSelectedPost } = usePostStore();
+const { user } = useAuthStore();
 const { closePostDetail, openPostEdit } = useAppViewStore();
 
 const post = computed(() => selectedPost.value);
@@ -152,7 +155,14 @@ const previewImage = (index) => {
   });
 };
 
+const authorAvatar = computed(() => {
+  if (!post.value) return '';
+  const isCurrentUserPost = [user.nickname, user.account].filter(Boolean).includes(post.value.username);
+  return isCurrentUserPost ? (user.avatar || '') : '';
+});
+
 const avatarLabel = computed(() => {
+  if (authorAvatar.value) return '';
   const name = post.value?.username || '';
   return name.replace('@', '').slice(0, 2).toUpperCase() || '?';
 });
@@ -435,6 +445,13 @@ const handleBack = () => closePostDetail();
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.author-avatar-img {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .author-avatar-text {

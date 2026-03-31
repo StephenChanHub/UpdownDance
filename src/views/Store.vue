@@ -197,7 +197,7 @@ const filteredProducts = computed(() => {
 .product-scroll {
     flex: 1;
     min-height: 0;
-    padding-top: 52px;
+    padding-top: 35px;
     box-sizing: border-box;
 }
 
@@ -205,20 +205,20 @@ const filteredProducts = computed(() => {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
-    padding-bottom: 12px;
+    /* padding-bottom: 12px; */
 }
 
 .product-card {
     background: #fff;
     border-radius: 16px;
     padding: 10px;
-    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
 }
 
 .product-thumb {
-    height: 88px;
+    height: 200px;
     border-radius: 12px;
     background: linear-gradient(135deg, #eef4ff, #dce9ff);
     display: flex;
