@@ -174,13 +174,13 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { useAuthStore } from '../stores/authStore';
 import { usePostStore } from '../stores/postStore';
 import { useAppViewStore } from '../stores/appViewStore';
 import MainPostCard from '../components/MainPostCard.vue';
 
-const { isLoggedIn, user, avatarLabel, login, register, updateProfile, logout } = useAuthStore();
+const { isLoggedIn, user, avatarLabel, login, register, fetchMe, updateProfile, logout } = useAuthStore();
 const { posts, selectPost } = usePostStore();
 const { openPostDetail } = useAppViewStore();
 
@@ -296,7 +296,7 @@ const openModal = (mode) => {
 
 const closeModal = () => { modalVisible.value = false; };
 
-const handleSubmit = () => {
+const handleSubmit = async () => {
     const mode = modalMode.value;
 
     form.nickname = normalizeName(form.nickname);
@@ -335,9 +335,13 @@ const handleSubmit = () => {
             uni.showToast({ title: 'Please fill in name & password', icon: 'none' });
             return;
         }
-        login({ nickname: form.nickname, account: form.account, avatar: form.avatar });
-        closeModal();
-        uni.showToast({ title: 'Welcome back!', icon: 'success' });
+        try {
+            await login({ account: form.account || undefined, nickname: form.nickname || undefined, password: form.password });
+            closeModal();
+            uni.showToast({ title: 'Welcome back!', icon: 'success' });
+        } catch (error) {
+            uni.showToast({ title: error.message || 'Login failed', icon: 'none' });
+        }
         return;
     }
 
@@ -346,15 +350,20 @@ const handleSubmit = () => {
             uni.showToast({ title: 'Name, Account ID and Password are required', icon: 'none' });
             return;
         }
-        register({
-            nickname: form.nickname,
-            account: form.account,
-            phone: form.phone,
-            email: form.email,
-            avatar: form.avatar,
-        });
-        closeModal();
-        uni.showToast({ title: 'Account created!', icon: 'success' });
+        try {
+            await register({
+                nickname: form.nickname,
+                account: form.account,
+                password: form.password,
+                phone: form.phone,
+                email: form.email,
+                avatar: form.avatar,
+            });
+            closeModal();
+            uni.showToast({ title: 'Account created!', icon: 'success' });
+        } catch (error) {
+            uni.showToast({ title: error.message || 'Register failed', icon: 'none' });
+        }
         return;
     }
 
@@ -363,15 +372,19 @@ const handleSubmit = () => {
             uni.showToast({ title: 'Name cannot be empty', icon: 'none' });
             return;
         }
-        updateProfile({
-            nickname: form.nickname,
-            account: form.account || user.account,
-            phone: form.phone,
-            email: form.email,
-            avatar: form.avatar,
-        });
-        closeModal();
-        uni.showToast({ title: 'Profile updated', icon: 'success' });
+        try {
+            await updateProfile({
+                nickname: form.nickname,
+                account: form.account || user.account,
+                phone: form.phone,
+                email: form.email,
+                avatar: form.avatar,
+            });
+            closeModal();
+            uni.showToast({ title: 'Profile updated', icon: 'success' });
+        } catch (error) {
+            uni.showToast({ title: error.message || 'Update failed', icon: 'none' });
+        }
     }
 };
 
@@ -381,11 +394,22 @@ const confirmLogout = () => {
         content: 'You will be signed out of your account.',
         success: ({ confirm }) => {
             if (!confirm) return;
-            logout();
-            uni.showToast({ title: 'Logged out', icon: 'none' });
+            logout().then(() => {
+                uni.showToast({ title: 'Logged out', icon: 'none' });
+            }).catch((error) => {
+                uni.showToast({ title: error.message || 'Logout failed', icon: 'none' });
+            });
         },
     });
 };
+
+onMounted(async () => {
+    try {
+        await fetchMe();
+    } catch {
+        // ignore token invalid in page init
+    }
+});
 </script>
 
 <style scoped>
