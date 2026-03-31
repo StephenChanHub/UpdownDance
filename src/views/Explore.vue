@@ -27,17 +27,23 @@
 
             <view class="view-header"></view>
 
-            <view v-if="feedRows.length" class="feed-container">
-                <template v-for="(row, ri) in feedRows" :key="ri">
-                    <!-- 16:9 full-width card -->
-                    <view v-if="row.type === 'wide'" class="feed-wide">
-                        <MainPostCard :post="row.post" @open="openPost" />
+            <view v-if="feedSections.length" class="feed-container">
+                <template v-for="(section, si) in feedSections" :key="si">
+                    <view v-if="section.type === 'wide'" class="feed-wide">
+                        <MainPostCard :post="section.post" @open="openPost" />
                     </view>
-                    <!-- pair of 9:16 or 1:1 cards -->
-                    <view v-else-if="row.type === 'pair'" class="feed-pair">
-                        <MainPostCard :post="row.posts[0]" @open="openPost" />
-                        <MainPostCard v-if="row.posts[1]" :post="row.posts[1]" @open="openPost" />
-                        <view v-else class="feed-pair-empty" />
+
+                    <view v-else class="feed-masonry">
+                        <view class="feed-column">
+                            <view v-for="post in section.left" :key="post.id" class="feed-item">
+                                <MainPostCard :post="post" @open="openPost" />
+                            </view>
+                        </view>
+                        <view class="feed-column">
+                            <view v-for="post in section.right" :key="post.id" class="feed-item">
+                                <MainPostCard :post="post" @open="openPost" />
+                            </view>
+                        </view>
                     </view>
                 </template>
             </view>
@@ -85,28 +91,51 @@ const tabPosts = computed(() => {
     return posts.value;
 });
 
-// Build feed rows: 16:9 → full-width row; others → paired rows
-const feedRows = computed(() => {
-    const rows = [];
-    const narrow = [];
+// Build feed sections: wide cards stay full-width; other cards use 2-column masonry
+const feedSections = computed(() => {
+    const sections = [];
+    let currentMasonry = [];
 
-    const flushNarrow = () => {
-        while (narrow.length > 0) {
-            rows.push({ type: 'pair', posts: narrow.splice(0, 2) });
+    const flushMasonry = () => {
+        if (!currentMasonry.length) return;
+
+        const left = [];
+        const right = [];
+        let leftHeight = 0;
+        let rightHeight = 0;
+
+        const getWeight = (post) => {
+            const ratio = post.ratio || '9:16';
+            if (ratio === '1:1') return 1;
+            if (ratio === '16:9') return 0.56;
+            return 1.78;
+        };
+
+        for (const post of currentMasonry) {
+            if (leftHeight <= rightHeight) {
+                left.push(post);
+                leftHeight += getWeight(post);
+            } else {
+                right.push(post);
+                rightHeight += getWeight(post);
+            }
         }
+
+        sections.push({ type: 'masonry', left, right });
+        currentMasonry = [];
     };
 
     for (const post of tabPosts.value) {
         if ((post.ratio || '9:16') === '16:9') {
-            flushNarrow();
-            rows.push({ type: 'wide', post });
+            flushMasonry();
+            sections.push({ type: 'wide', post });
         } else {
-            narrow.push(post);
+            currentMasonry.push(post);
         }
     }
 
-    flushNarrow();
-    return rows;
+    flushMasonry();
+    return sections;
 });
 
 const openCreate = () => openPostCreate();
@@ -224,21 +253,26 @@ onMounted(() => {
     box-sizing: border-box;
 }
 
-/* 16:9 — full width */
 .feed-wide {
     width: 100%;
 }
 
-/* pair row — two equal columns */
-.feed-pair {
+.feed-masonry {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px;
     width: 100%;
+    align-items: start;
 }
 
-.feed-pair-empty {
-    /* placeholder to keep grid balanced */
+.feed-column {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.feed-item {
+    width: 100%;
 }
 
 .empty-state {
@@ -268,7 +302,11 @@ onMounted(() => {
         padding: 0 8px 80px;
     }
 
-    .feed-pair {
+    .feed-masonry {
+        gap: 10px;
+    }
+
+    .feed-column {
         gap: 10px;
     }
 }
